@@ -148,6 +148,10 @@ namespace GhostMacro
 
             var miHelp = new ToolStripMenuItem(L.T("&Yardım", "&Help"));
             miHelp.DropDownItems.Add(Mi(L.T("Nasıl kullanılır", "How to use"), Keys.F1, (s, e) => ShowHelp()));
+            miHelp.DropDownItems.Add(new ToolStripSeparator());
+            miHelp.DropDownItems.Add(Mi(L.T("GitHub sayfası", "GitHub page"), Keys.None, (s, e) => AboutDialog.OpenUrl(AboutDialog.RepoUrl)));
+            miHelp.DropDownItems.Add(Mi("ilkayderici.com.tr", Keys.None, (s, e) => AboutDialog.OpenUrl(AboutDialog.SiteUrl)));
+            miHelp.DropDownItems.Add(Mi(L.T("Hakkında", "About"), Keys.None, (s, e) => AboutDialog.Show(this)));
 
             menu.Items.AddRange(new ToolStripItem[] { miFile, miSettings, miHelp });
         }

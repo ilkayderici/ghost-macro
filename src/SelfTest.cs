@@ -50,7 +50,9 @@ namespace GhostMacro
                 Check("roundtrip " + s, KeyNames.Format(p) == s, KeyNames.Format(p));
             }
             Check("bad token", !KeyNames.TryParse("Ctrl+Foo", out _, out _));
-            Check("plus key", KeyNames.TryParse("Ctrl++", out var pl, out _) && pl.Count == 2, pl == null ? "" : string.Join(",", pl));
+            Check("plus key", KeyNames.TryParse("Ctrl++", out var pl, out _) && pl.Count == 2 && pl[0] == 0x11 && pl[1] == 0x6B, pl == null ? "" : string.Join(",", pl));
+            Check("star key", KeyNames.TryParse("*", out var st, out _) && st.Count == 1 && st[0] == 0x6A, st == null ? "" : string.Join(",", st));
+            Check("plus roundtrip", KeyNames.Format(KeyNames.Parse("Ctrl++")) == "Ctrl+NumAdd", KeyNames.Format(KeyNames.Parse("Ctrl++")));
         }
 
         static void TestXml()

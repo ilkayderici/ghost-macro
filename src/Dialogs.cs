@@ -29,6 +29,53 @@ namespace GhostMacro
             new Button { Text = text, DialogResult = r, AutoSize = true, Padding = new Padding(8, 1, 8, 1) };
     }
 
+    internal static class AboutDialog
+    {
+        public const string RepoUrl = "https://github.com/ilkayderici/ghost-macro";
+        public const string SiteUrl = "https://ilkayderici.com.tr";
+
+        public static void OpenUrl(string url)
+        {
+            try { System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true }); }
+            catch { }
+        }
+
+        static LinkLabel Link(string text, string url)
+        {
+            var l = new LinkLabel { Text = text, AutoSize = true, Margin = new Padding(3, 4, 3, 3) };
+            l.LinkClicked += (s, e) => OpenUrl(url);
+            return l;
+        }
+
+        public static void Show(IWin32Window owner)
+        {
+            using (var f = Dialogs.Make(L.T("Hakkında", "About")))
+            {
+                var t = new TableLayoutPanel { ColumnCount = 1, AutoSize = true, Padding = new Padding(16), Location = Point.Empty };
+                var ver = typeof(AboutDialog).Assembly.GetName().Version;
+                t.Controls.Add(new Label
+                {
+                    Text = "GhostMacro " + ver.ToString(3),
+                    AutoSize = true,
+                    Font = new Font("Segoe UI", 12F, FontStyle.Bold),
+                    Margin = new Padding(3, 0, 3, 4),
+                });
+                t.Controls.Add(Dialogs.Lbl(L.T("Fare ve klavye makro kaydedici / oynatıcı.", "Mouse and keyboard macro recorder / player.")));
+                t.Controls.Add(Dialogs.Lbl(L.T("© 2026 ilkay Derici. Tüm hakları saklıdır.", "© 2026 ilkay Derici. All rights reserved.")));
+                t.Controls.Add(Link("GitHub: " + RepoUrl.Replace("https://", ""), RepoUrl));
+                t.Controls.Add(Link("Web: " + SiteUrl.Replace("https://", ""), SiteUrl));
+                var ok = Dialogs.Btn(L.T("Tamam", "OK"), DialogResult.OK);
+                var bp = new FlowLayoutPanel { FlowDirection = FlowDirection.RightToLeft, AutoSize = true, Dock = DockStyle.Fill, Margin = new Padding(0, 12, 0, 0) };
+                bp.Controls.Add(ok);
+                t.Controls.Add(bp);
+                f.Controls.Add(t);
+                f.AcceptButton = ok;
+                f.CancelButton = ok;
+                f.ShowDialog(owner);
+            }
+        }
+    }
+
     internal static class NumberDialog
     {
         public static int? Ask(IWin32Window owner, string title, string label, int value, int min, int max)

@@ -96,15 +96,38 @@ namespace GhostMacro
             return tokens;
         }
 
-        static int ParseToken(string k)
+        /// <param name="mods">Karakter klavyede Shift/AltGr gerektiriyorsa bu modifier'lar eklenir.</param>
+        static int ParseToken(string k, List<int> mods)
         {
             if (Aliases.TryGetValue(k, out int v)) return v;
             if (k.Length == 1)
             {
                 char c = k[0];
                 if (c >= '0' && c <= '9') return c;
+                if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) return char.ToUpperInvariant(c);
+                // Klavye düzeninden bağımsız: numpad tuşları her düzende aynı karakteri yazar.
+                switch (c)
+                {
+                    case '+': return 0x6B;
+                    case '*': return 0x6A;
+                    case '/': return 0x6F;
+                }
                 short r = Native.VkKeyScan(c);
-                if (r != -1 && (r & 0xFF) != 0xFF) return r & 0xFF;
+                if (r != -1 && (r & 0xFF) != 0xFF)
+                {
+                    int flags = (r >> 8) & 0xFF;
+                    if (mods != null)
+                    {
+                        if ((flags & 6) == 6) mods.Add(0xA5);        // Ctrl+Alt = AltGr
+                        else
+                        {
+                            if ((flags & 2) != 0) mods.Add(VK_CONTROL);
+                            if ((flags & 4) != 0) mods.Add(VK_MENU);
+                        }
+                        if ((flags & 1) != 0) mods.Add(VK_SHIFT);
+                    }
+                    return r & 0xFF;
+                }
                 if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')) return char.ToUpperInvariant(c);
                 return 0;
             }
@@ -135,8 +158,11 @@ namespace GhostMacro
             if (tokens.Count == 0) { error = L.T("Tuş girilmedi.", "No key given."); return false; }
             foreach (var t in tokens)
             {
-                int vk = ParseToken(t);
+                var mods = new List<int>();
+                int vk = ParseToken(t, mods);
                 if (vk == 0) { error = L.T($"\"{t}\" tanınmadı.", $"\"{t}\" not recognized."); return false; }
+                foreach (int m in mods)
+                    if (!vks.Any(x => x == m || (m != 0xA5 && ModGroup(x) == m))) vks.Add(m);
                 vks.Add(vk);
             }
             return true;
