@@ -58,6 +58,14 @@ dotnet build -c Release
 GhostMacro.exe --selftest sonuc.txt
 ```
 
+## Katkı ve haklar
+
+© 2026 ilkay Derici. Tüm hakları saklıdır.
+
+Bu proje açık kaynak **değildir**. Kaynak kod yalnızca inceleme ve bu projeye katkı amacıyla paylaşılmıştır. Kodun kopyalanması, değiştirilip dağıtılması veya başka projelerde kullanılması izin olmadan yasaktır. `GhostMacro.exe` kişisel kullanım için ücretsiz indirilebilir.
+
+Katkılar memnuniyetle karşılanır. Pull request göndermeden önce [CONTRIBUTING.md](CONTRIBUTING.md) dosyasını okuyun.
+
 ---
 
 <a id="english"></a>
@@ -119,3 +127,11 @@ Self-test:
 ```bash
 GhostMacro.exe --selftest result.txt
 ```
+
+### Contributing and rights
+
+© 2026 ilkay Derici. All rights reserved.
+
+This project is **not** open source. The source code is shared only for review and for contributing to this project. Copying, modifying and redistributing the code, or using it in other projects, is not allowed without permission. `GhostMacro.exe` is free to download for personal use.
+
+Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request.
