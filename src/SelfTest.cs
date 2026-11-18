@@ -33,6 +33,7 @@ namespace GhostMacro
             T("recorder", TestRecorder);
             T("keypicker", TestKeyPicker);
             T("player", TestPlayer);
+            T("humanizer", TestHumanizer);
 
             log.AppendLine(fails == 0 ? "ALL PASS" : fails + " FAIL");
             File.WriteAllText(outFile, log.ToString(), Encoding.UTF8);
@@ -173,6 +174,57 @@ namespace GhostMacro
             sw.Stop();
             Check("player finished", ok);
             Check("player timing ~400ms", sw.ElapsedMilliseconds >= 350 && sw.ElapsedMilliseconds <= 700, sw.ElapsedMilliseconds + "ms");
+        }
+
+        static void TestHumanizer()
+        {
+            var h = new Humanizer(new Random(42));
+            bool inRange = true;
+            double sum = 0;
+            for (int i = 0; i < 2000; i++)
+            {
+                double v = h.Range(50, 150);
+                if (v < 50 || v > 150) inRange = false;
+                sum += v;
+            }
+            Check("human range bounds", inRange);
+            Check("human range mean", Math.Abs(sum / 2000 - 100) < 5, (sum / 2000).ToString("0.0"));
+
+            bool facOk = true;
+            for (int i = 0; i < 2000; i++) { double f = h.DelayFactor(20); if (f < 0.8 || f > 1.2) facOk = false; }
+            Check("human delay factor", facOk);
+
+            bool offOk = true;
+            for (int i = 0; i < 500; i++)
+            {
+                int x = 100, y = 100;
+                h.Offset(ref x, ref y, 3);
+                if ((x - 100) * (x - 100) + (y - 100) * (y - 100) > 18) offOk = false;
+            }
+            Check("human click offset", offOk);
+
+            bool endOk = true, curved = false, jumpOk = true;
+            for (int i = 0; i < 200; i++)
+            {
+                var pts = h.Path(10, 20, 800, 500, 40);
+                var last = pts[pts.Count - 1];
+                if (pts.Count != 40 || last.X != 800 || last.Y != 500) endOk = false;
+                var mid = pts[pts.Count / 2];
+                // düz çizgiden uzaklık
+                double d = Math.Abs((500 - 20) * mid.X - (800 - 10) * mid.Y + 800 * 20 - 500 * 10) / Math.Sqrt(480.0 * 480 + 790 * 790);
+                if (d > 5) curved = true;
+                int px = 10, py = 20;
+                foreach (var q in pts)
+                {
+                    if (Math.Abs(q.X - px) > 200 || Math.Abs(q.Y - py) > 200) jumpOk = false;
+                    px = q.X; py = q.Y;
+                }
+            }
+            Check("human path ends on target", endOk);
+            Check("human path curves", curved);
+            Check("human path no jumps", jumpOk);
+            var one = h.Path(5, 5, 5, 5, 10);
+            Check("human path zero dist", one.Count == 1 && one[0].X == 5 && one[0].Y == 5);
         }
     }
 }

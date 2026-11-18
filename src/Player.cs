@@ -13,6 +13,7 @@ namespace GhostMacro
         public int SpeedPct = 100;
         public int JitterPct;
         public int SmoothMs;
+        public bool Human;           // insan gibi oynat
         public int StartIndex;
     }
 
@@ -33,9 +34,25 @@ namespace GhostMacro
         Stopwatch sw;
         double deadline;
         readonly Random rnd = new Random();
+        readonly Humanizer hum;
         string stopReason;
         readonly HashSet<int> heldKeys = new HashSet<int>();
         readonly HashSet<MouseBtn> heldButtons = new HashSet<MouseBtn>();
+
+        public Player() { hum = new Humanizer(rnd); }
+
+        bool H => opt.Human;
+
+        /// <summary>İnsan modunda [min,max] arası, değilse sabit süre.</summary>
+        double T(double fixedMs, double min, double max) => H ? hum.Range(min, max) : fixedMs;
+
+        /// <summary>İptal edilebilir kısa bekleme.</summary>
+        void Nap(double ms)
+        {
+            if (ms <= 0) return;
+            if (ms < 25) { Thread.Sleep((int)Math.Round(ms)); return; }
+            if (ct.WaitHandle.WaitOne((int)Math.Round(ms))) throw new OperationCanceledException();
+        }
 
         public void Start(List<Step> steps, PlayOptions o)
         {
@@ -109,7 +126,8 @@ namespace GhostMacro
         double Scale(int ms)
         {
             double d = ms * 100.0 / Math.Max(1, opt.SpeedPct);
-            if (opt.JitterPct > 0) d *= 1 + (rnd.NextDouble() * 2 - 1) * opt.JitterPct / 100.0;
+            if (H) d *= hum.DelayFactor(Math.Max(opt.JitterPct, 15));
+            else if (opt.JitterPct > 0) d *= 1 + (rnd.NextDouble() * 2 - 1) * opt.JitterPct / 100.0;
             return Math.Max(0, d);
         }
 
@@ -141,6 +159,11 @@ namespace GhostMacro
             var p = Input.CursorPos();
             double sx = p.X, sy = p.Y;
             int n = Math.Max(1, (int)(ms / 10));
+            if (H)
+            {
+                foreach (var q in hum.Path(sx, sy, x, y, n)) { Wait(ms / n); MoveTo(q.X, q.Y); }
+                return;
+            }
             for (int k = 1; k <= n; k++)
             {
                 Wait(ms / n);
@@ -156,14 +179,14 @@ namespace GhostMacro
         void Click(MouseBtn b)
         {
             Down(b);
-            Thread.Sleep(30);
+            Nap(T(30, 55, 130));
             Up(b);
         }
 
         void Tap(int vk)
         {
             Input.Key(vk, false);
-            Thread.Sleep(10);
+            Nap(T(10, 45, 110));
             Input.Key(vk, true);
         }
 
@@ -171,17 +194,31 @@ namespace GhostMacro
         {
             double delay = Scale(s.DelayMs);
             bool positional = Step.HasPosition(s.Action) && !(s.AtCursor && Step.AllowsAtCursor(s.Action));
-            double glide = 0;
-            if (positional && opt.SmoothMs > 0 && !(s.Action == StepAction.Move && s.DelayMs < 100))
-                glide = Math.Min(opt.SmoothMs, delay);
+            // tam kayıttaki sık fare hareketleri olduğu gibi oynatılır
+            bool rawMove = s.Action == StepAction.Move && s.DelayMs < 100;
+            int tx = s.X, ty = s.Y;
+            if (H && positional && !rawMove && s.Action != StepAction.MouseUp) hum.Offset(ref tx, ref ty, 3);
 
+            double glide = 0;
+            if (positional && !rawMove)
+            {
+                if (opt.SmoothMs > 0) glide = Math.Min(opt.SmoothMs, delay);
+                else if (H)
+                {
+                    var c = Input.CursorPos();
+                    double dist = Math.Sqrt((double)(tx - c.X) * (tx - c.X) + (double)(ty - c.Y) * (ty - c.Y));
+                    if (dist >= 2) glide = Math.Min(Humanizer.MoveTime(dist), delay);
+                }
+            }
+
+            if (H && !rawMove) delay += hum.Hesitation();
             Wait(delay - glide);
 
             if (positional)
             {
-                if (glide > 0) Glide(s.X, s.Y, glide);
-                else MoveTo(s.X, s.Y);
-                if (s.Action != StepAction.Move) Thread.Sleep(15);
+                if (glide > 0) Glide(tx, ty, glide);
+                else MoveTo(tx, ty);
+                if (s.Action != StepAction.Move) Nap(T(15, 20, 70));
             }
 
             switch (s.Action)
@@ -191,7 +228,7 @@ namespace GhostMacro
                     break;
                 case StepAction.DoubleClick:
                     Click(s.Button);
-                    Thread.Sleep(40);
+                    Nap(T(40, 60, 120));
                     Click(s.Button);
                     break;
                 case StepAction.MouseDown:
@@ -202,9 +239,9 @@ namespace GhostMacro
                     break;
                 case StepAction.Drag:
                     Down(s.Button);
-                    Thread.Sleep(40);
+                    Nap(T(40, 60, 140));
                     Glide(s.X2, s.Y2, Math.Max(30, s.Amount * 100.0 / Math.Max(1, opt.SpeedPct)));
-                    Thread.Sleep(40);
+                    Nap(T(40, 50, 120));
                     Up(s.Button);
                     break;
                 case StepAction.Wheel:
@@ -213,9 +250,9 @@ namespace GhostMacro
                 case StepAction.KeyCombo:
                 {
                     var vks = KeyNames.Parse(s.Keys);
-                    foreach (var vk in vks) { heldKeys.Add(vk); Input.Key(vk, false); Thread.Sleep(12); }
-                    Thread.Sleep(25);
-                    for (int k = vks.Count - 1; k >= 0; k--) { Input.Key(vks[k], true); heldKeys.Remove(vks[k]); Thread.Sleep(8); }
+                    foreach (var vk in vks) { heldKeys.Add(vk); Input.Key(vk, false); Nap(T(12, 25, 70)); }
+                    Nap(T(25, 45, 110));
+                    for (int k = vks.Count - 1; k >= 0; k--) { Input.Key(vks[k], true); heldKeys.Remove(vks[k]); Nap(T(8, 15, 50)); }
                     break;
                 }
                 case StepAction.KeyDown:
@@ -234,8 +271,9 @@ namespace GhostMacro
                         if (c == '\r') continue;
                         if (c == '\n') Tap(0x0D);
                         else if (c == '\t') Tap(0x09);
+                        else if (H) { Input.Char(c, false); Nap(hum.Range(35, 95)); Input.Char(c, true); }
                         else { Input.Char(c, false); Input.Char(c, true); }
-                        Thread.Sleep(10);
+                        Nap(T(10, 40, 180));
                     }
                     break;
             }

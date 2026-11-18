@@ -42,7 +42,7 @@ namespace GhostMacro
         DataGridView grid;
         Button btnRecord, btnPlay, btnPlayFrom, btnStop;
         RadioButton rbStepMode, rbFullMode, rbRealDelay, rbFixedDelay;
-        CheckBox chkRecordKeys, chkInfinite, chkStopOnMove, chkMinimize;
+        CheckBox chkRecordKeys, chkInfinite, chkStopOnMove, chkMinimize, chkHuman;
         NumericUpDown numFixed, numRepeat, numGap, numSpeed, numJitter, numSmooth;
         FlowLayoutPanel sidePanel, quickAdd;
         MenuStrip menu;
@@ -229,6 +229,7 @@ namespace GhostMacro
             numSmooth = Num(0, 5000, 50, 60);
             chkStopOnMove = new CheckBox { Text = L.T("Fareyi oynatırsam dursun", "Stop if I move the mouse"), AutoSize = true };
             chkMinimize = new CheckBox { Text = L.T("Oynatırken pencereyi küçült", "Minimize window while playing"), AutoSize = true };
+            chkHuman = new CheckBox { Text = L.T("İnsan gibi oynat", "Play like a human"), AutoSize = true };
 
             var opts = new TableLayoutPanel { ColumnCount = 4, AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Margin = Padding.Empty };
             opts.Controls.Add(Lb(L.T("Hız:", "Speed:")));
@@ -239,13 +240,18 @@ namespace GhostMacro
             opts.Controls.Add(Row(Lb("±"), numJitter, Lb("%")));
             opts.Controls.Add(Lb(L.T("Yumuşak hareket:", "Smooth movement:")));
             opts.Controls.Add(Row(numSmooth, Lb("ms")));
-            var checks = Stack(chkStopOnMove, chkMinimize);
+            var checks = Stack(chkHuman, chkStopOnMove, chkMinimize);
             opts.Controls.Add(checks);
             opts.SetColumnSpan(checks, 4);
 
             var tip = new ToolTip();
             tip.SetToolTip(numSpeed, L.T("100 = normal, 200 = iki kat hızlı, 50 = yarı hız", "100 = normal, 200 = twice as fast, 50 = half speed"));
             tip.SetToolTip(numJitter, L.T("Bekleme sürelerini rastgele bu kadar değiştirir (insan gibi görünsün)", "Randomly varies wait times by this much (looks more human)"));
+            tip.SetToolTip(chkHuman, L.T(
+                "Fare kavisli gider, tıklama noktası birkaç piksel kayar, tuşlar ve tıklamalar değişen sürelerle basılı kalır, " +
+                "yazı düzensiz hızda yazılır, ara sıra kısa duraklamalar olur. Oynatma biraz yavaşlar.",
+                "The mouse moves in curves, click points shift a few pixels, keys and clicks are held for varying times, " +
+                "text is typed at an uneven pace, with an occasional short pause. Playback gets a bit slower."));
             tip.SetToolTip(numSmooth, L.T("0 = fare anında ışınlanır; >0 = hedefe bu sürede kayarak gider", "0 = cursor jumps instantly; >0 = glides to the target in this time"));
 
             btnPlay = new Button { Width = 125, Height = 40, Font = new Font("Segoe UI", 10.5F, FontStyle.Bold), Margin = new Padding(3, 3, 3, 3), UseVisualStyleBackColor = true };
@@ -450,6 +456,7 @@ namespace GhostMacro
             SetNum(numSpeed, cfg.Speed);
             SetNum(numJitter, cfg.Jitter);
             SetNum(numSmooth, cfg.Smooth);
+            chkHuman.Checked = cfg.Human;
             chkStopOnMove.Checked = cfg.StopOnMove;
             chkMinimize.Checked = cfg.Minimize;
         }
@@ -466,6 +473,7 @@ namespace GhostMacro
             cfg.Speed = (int)numSpeed.Value;
             cfg.Jitter = (int)numJitter.Value;
             cfg.Smooth = (int)numSmooth.Value;
+            cfg.Human = chkHuman.Checked;
             cfg.StopOnMove = chkStopOnMove.Checked;
             cfg.Minimize = chkMinimize.Checked;
             cfg.Steps = steps;
@@ -877,7 +885,9 @@ namespace GhostMacro
                 "Her fare hareketi ve tuş gerçek zamanlamasıyla kaydedilir.\n\n" +
                 "OYNATMA\n" +
                 $"{hp}: oynat, {hs}: durdur. Fareyi oynatırsanız da durur (seçenek).\n" +
-                "Tekrar, hız, rastgelelik ve yumuşak hareket ayarlanabilir.\n\n" +
+                "Tekrar, hız, rastgelelik ve yumuşak hareket ayarlanabilir.\n" +
+                "\"İnsan gibi oynat\": fare kavisli gider, tıklama noktası birkaç piksel kayar,\n" +
+                "tuş ve tıklama süreleri değişir, yazı düzensiz hızda yazılır, ara sıra kısa duraklar.\n\n" +
                 "NOT: Yönetici olarak çalışan bir programı kontrol etmek için GhostMacro'yu da\n" +
                 "\"Yönetici olarak çalıştır\" ile açın. Kısayollar Ayarlar menüsünden değişir.",
                 "STEP-BY-STEP RECORDING (default)\n" +
@@ -894,7 +904,9 @@ namespace GhostMacro
                 "Every mouse movement and key is recorded with real timing.\n\n" +
                 "PLAYBACK\n" +
                 $"{hp}: play, {hs}: stop. Moving the mouse also stops it (option).\n" +
-                "Repeat, speed, randomness and smooth movement can be adjusted.\n\n" +
+                "Repeat, speed, randomness and smooth movement can be adjusted.\n" +
+                "\"Play like a human\": the mouse moves in curves, click points shift a few pixels,\n" +
+                "key and click times vary, text is typed at an uneven pace, with an occasional short pause.\n\n" +
                 "NOTE: To control a program running as administrator, start GhostMacro with\n" +
                 "\"Run as administrator\" too. Hotkeys can be changed in the Settings menu."),
                 L.T("Nasıl kullanılır", "How to use"), MessageBoxButtons.OK, MessageBoxIcon.Information);
@@ -1118,6 +1130,7 @@ namespace GhostMacro
                 SpeedPct = (int)numSpeed.Value,
                 JitterPct = (int)numJitter.Value,
                 SmoothMs = (int)numSmooth.Value,
+                Human = chkHuman.Checked,
                 StartIndex = start,
             };
             stopOnMove = chkStopOnMove.Checked;

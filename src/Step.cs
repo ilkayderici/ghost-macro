@@ -115,6 +115,7 @@ namespace GhostMacro
         public int Speed = 100;
         public int Jitter;
         public int Smooth;
+        public bool Human;
         public bool StopOnMove = true;
         public bool Minimize = true;
         public bool TopMost;

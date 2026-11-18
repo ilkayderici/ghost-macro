@@ -12,6 +12,7 @@ Windows için basit fare + klavye makro kaydedici / oynatıcı: tıkla, kaydet, 
 - Tuş ve kombinasyonları listeden seçerek ekleme (`Ctrl+C`, `Win+R`, `Ctrl+Shift+Esc`...).
 - Metin yazdırma, bekleme, tekerlek, sürükleme adımları.
 - Tekrar sayısı / sonsuz döngü, hız, rastgelelik, yumuşak fare hareketi.
+- **İnsan gibi oynat**: fare kavisli gider ve bazen hedefi biraz geçip döner, tıklama noktası birkaç piksel kayar, tuş ve tıklama basılı kalma süreleri değişir, yazı düzensiz hızda yazılır, ara sıra kısa duraklamalar olur.
 - Global kısayollar, fare oynatılınca durdurma (isteğe bağlı).
 - Türkçe ve İngilizce arayüz.
 - Makrolar `.gmacro` (XML) dosyası olarak kaydedilir.
@@ -82,6 +83,7 @@ Simple mouse + keyboard macro recorder / player for Windows: click, record, play
 - Pick keys and combinations from a list (`Ctrl+C`, `Win+R`, `Ctrl+Shift+Esc`...).
 - Type-text, wait, wheel and drag steps.
 - Repeat count / infinite loop, speed, randomness, smooth mouse movement.
+- **Play like a human**: the mouse moves in curves and sometimes overshoots the target a little, click points shift a few pixels, key and click hold times vary, text is typed at an uneven pace, with an occasional short pause.
 - Global hotkeys, stop on mouse move (optional).
 - Turkish and English UI.
 - Macros are saved as `.gmacro` (XML) files.
